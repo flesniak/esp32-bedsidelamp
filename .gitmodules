@@ -1,0 +1,3 @@
+[submodule "main/libartnet"]
+	path = main/libartnet
+	url = https://github.com/flesniak/libartnet.git

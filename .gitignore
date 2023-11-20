@@ -1,0 +1,4 @@
+dependencies.lock
+.cache
+build/
+managed_components/
