@@ -17,6 +17,8 @@
 #include "esp_sleep.h"
 #include "nvs_flash.h"
 
+#include "led_luts.h"
+#include "ledstrip.h"
 #include "wifi.h"
 
 static const char *TAG = "example";
@@ -30,10 +32,9 @@ static led_strip_handle_t led_strip;
 
 static void fade_rgb_led(void* arg)
 {
-    const uint8_t fade_lut[] = {0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 17, 20, 23, 28, 35, 47};
-    const uint8_t idx_max = sizeof(fade_lut)-1;
+    const uint8_t idx_max = sizeof(led_lut_16)-1;
     static uint8_t iteration = 0, idx = 0;
-    uint8_t value = fade_lut[idx];
+    uint8_t value = led_lut_16[idx];
     idx += (iteration & 1) ? -1 : +1;
     switch (iteration) {
         case 0: case 1: led_strip_set_pixel(led_strip, 0, value, 0, 0); break;
@@ -41,7 +42,7 @@ static void fade_rgb_led(void* arg)
         default:        led_strip_set_pixel(led_strip, 0, 0, 0, value);
     }
     if (idx == idx_max || idx == 0) {
-        if (iteration == 5)
+        if (iteration == 1) //5)
             iteration = 0;
         else
             iteration++;
@@ -77,7 +78,7 @@ void app_main(void)
 
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 40000));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 100000));
 
     //Initialize NVS, required for WIFI
     esp_err_t ret = nvs_flash_init();
@@ -87,11 +88,13 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-    wifi_init_sta();
+    xTaskCreate(ledstrip_task, "ledstrip_task", 4096, NULL, 4, NULL);
 
-    while (1)
-        vTaskDelay(1000);
+    // ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    // wifi_init_sta();
+
+    // while (1)
+    //     vTaskDelay(1000);
 
     // while (1) {
     //     ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
